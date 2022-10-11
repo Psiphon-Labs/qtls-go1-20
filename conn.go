@@ -1071,6 +1071,27 @@ func (c *Conn) readHandshakeBytes(n int) error {
 	return nil
 }
 
+// [Psiphon]
+
+func ReadClientHelloRandom(data []byte) ([]byte, error) {
+	if len(data) < 1 {
+		return nil, errors.New("tls: missing message type")
+	}
+	if data[0] != typeClientHello {
+		return nil, errors.New("tls: unexpected message type")
+	}
+
+	// Unlike readHandshake, m is not retained and so making a copy of the
+	// input data is not necessary.
+
+	var m clientHelloMsg
+	if !m.unmarshal(data) {
+		return nil, errors.New("tls: unexpected message")
+	}
+
+	return m.random, nil
+}
+
 // readHandshake reads the next handshake message from
 // the record layer. If transcript is non-nil, the message
 // is written to the passed transcriptHash.
