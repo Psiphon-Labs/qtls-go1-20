@@ -900,6 +900,11 @@ func TestExtraConfigCloneNonFuncFields(t *testing.T) {
 			// function field to this list, you must also change
 			// TestCloneFuncFields to ensure that the func field is
 			// cloned.
+
+		// [Psiphon]
+		case "ClientHelloPRNG":
+		case "GetClientHelloRandom":
+		
 		default:
 			t.Errorf("all fields must be accounted for, but saw unknown field %q", fn)
 		}
