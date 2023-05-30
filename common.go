@@ -800,8 +800,12 @@ func (c *config) Clone() *config {
 	if c == nil {
 		return nil
 	}
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	// Initialize session tickets if this config can be used for a server.
+	if len(c.Certificates) > 0 || c.GetCertificate != nil {
+		c.maybeRotateTicketKeysLocked()
+	}
 	return &config{
 		Rand:                        c.Rand,
 		Time:                        c.Time,
@@ -913,7 +917,11 @@ func (c *config) ticketKeys(configForClient *config) []ticketKey {
 	defer c.mutex.RLock()
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	// Re-check the condition in case it changed since obtaining the new lock.
+	c.maybeRotateTicketKeysLocked()
+	return c.autoSessionTicketKeys
+}
+
+func (c *config) maybeRotateTicketKeysLocked() {
 	if len(c.autoSessionTicketKeys) == 0 || c.time().Sub(c.autoSessionTicketKeys[0].created) >= ticketKeyRotation {
 		var newKey [32]byte
 		if _, err := io.ReadFull(c.rand(), newKey[:]); err != nil {
@@ -929,7 +937,6 @@ func (c *config) ticketKeys(configForClient *config) []ticketKey {
 		}
 		c.autoSessionTicketKeys = valid
 	}
-	return c.autoSessionTicketKeys
 }
 
 // SetSessionTicketKeys updates the session ticket keys for a server.
