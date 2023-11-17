@@ -621,6 +621,16 @@ func (m *clientHelloMsg) marshalRandomized() []byte {
 						})
 					}
 				},
+
+				func() {
+					if m.quicTransportParameters != nil { // marshal zero-length parameters when present
+						// RFC 9001, Section 8.2
+						b.AddUint16(extensionQUICTransportParameters)
+						b.AddUint16LengthPrefixed(func(b *cryptobyte.Builder) {
+							b.AddBytes(m.quicTransportParameters)
+						})
+					}
+				},
 			}
 
 			perm = m.PRNG.Perm(len(extensionMarshallers))
